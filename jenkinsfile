@@ -1,0 +1,54 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_ACCESS_KEY_ID     = credentials('aws-access-key')
+    AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+  }
+
+  stages {
+    stage('Checkout Code') {
+      steps {
+        git 'https://github.com/vishnuvardhan25-create/terraform-aws-5-ec2.git'
+      }
+    }
+
+    stage('Terraform Init') {
+      steps {
+        sh 'terraform init'
+      }
+    }
+
+    stage('Terraform Plan') {
+      steps {
+        sh '''
+          terraform plan \
+          -var="aws_access_key=$AWS_ACCESS_KEY_ID" \
+          -var="aws_secret_key=$AWS_SECRET_ACCESS_KEY" \
+          -var="key_name=git-lab"
+        '''
+      }
+    }
+
+    stage('Terraform Apply') {
+      steps {
+        sh '''
+          terraform apply -auto-approve \
+          -var="aws_access_key=$AWS_ACCESS_KEY_ID" \
+          -var="aws_secret_key=$AWS_SECRET_ACCESS_KEY" \
+          -var="key_name=git-lab"
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "5 EC2 instances created in AWS!"
+    }
+    failure {
+      echo "Something went wrong. Check console output."
+    }
+  }
+}
+
